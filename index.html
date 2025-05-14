@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Movie Plex</title>
+  <style>
+    :root {
+      --primary: #83151a;
+      --primary-light: #d47e82;
+      --bg: #f4f4f4;
+      --dark: #222;
+      --text: #000;
+    }
+
+    body.dark {
+      --bg: #121212;
+      --text: #999898;
+      --primary: #5a0d11;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    nav a {
+      color: white;
+      text-decoration: none;
+      margin: 0 1rem;
+      font-weight: bold;
+    }
+
+    .nav-left {
+      font-size: 1.2rem;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .theme-toggle {
+      background: white;
+      color: var(--primary);
+      font-weight: bold;
+      padding: 0.4rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+      border: none;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .theme-switch-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .theme-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+    }
+
+    .theme-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 34px;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
+
+    .slider::before {
+      content: "";
+      position: absolute;
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+
+    input:checked+.slider {
+      background-color: var(--primary);
+    }
+
+    input:checked+.slider:hover {
+      background-color: var(--primary-light);
+    }
+
+    input:checked+.slider::before {
+      transform: translateX(26px);
+    }
+
+    .container {
+      padding: 2rem;
+      max-width: 960px;
+      margin: auto;
+    }
+
+    section {
+      margin-bottom: 3rem;
+      padding: 1.5rem;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      transition: background 0.3s ease;
+    }
+
+    body.dark section {
+      background: #1e1e1e;
+    }
+
+    body.dark header,
+    body.dark footer {
+      background: #3b3b3b;
+      color: #eee;
+    }
+
+    #search-bar {
+      margin: auto;
+      max-width: 400px;
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      flex-wrap: nowrap;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    textarea {
+      width: 100%;
+      max-width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid #ccc;
+      border-radius: 20px;
+      background-color: #fefefe;
+      font-size: 1rem;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    input:focus,
+    textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 6px rgba(229, 9, 20, 0.3);
+      outline: none;
+      background-color: #fff;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: #999;
+    }
+
+    body.dark input[type="text"],
+    body.dark input[type="email"],
+    body.dark textarea {
+      background-color: #1c1c1c;
+      color: #eee;
+      border: 1px solid #444;
+    }
+
+    body.dark input::placeholder,
+    body.dark textarea::placeholder {
+      color: #777;
+    }
+
+    button {
+      padding: 0.7rem 1.5rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: var(--primary-light);
+    }
+
+    #movie-result {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .movie-card {
+      background: var(--bg);
+      padding: 1rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      animation: fadeIn 0.4s ease-in-out;
+    }
+
+    .movie-card:hover {
+      transform: scale(1.03);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .movie-card img {
+      max-width: 100%;
+      height: 300px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    #movie-details {
+      margin-top: 2rem;
+      background: var(--bg);
+      padding: 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    form {
+      max-width: 500px;
+      margin: auto;
+    }
+
+    form div {
+      margin-bottom: 1.2rem;
+    }
+
+    #home {
+      text-align: center;
+      padding: 2rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      background: var(--primary);
+      color: var(--bg);
+    }
+
+    .hamburger {
+      display: none;
+      font-size: 1.5rem;
+      background: none;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    @media (max-width: 768px) {
+      .hamburger {
+        display: block;
+      }
+
+      nav {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .nav-right {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        margin-top: 1rem;
+        background-color: var(--primary);
+        padding: 1rem 0;
+      }
+
+      .nav-right.show {
+        display: flex;
+      }
+
+      .nav-right a,
+      .theme-switch-wrapper {
+        margin: 0.5rem 0;
+      }
+    }
+
+    @media (max-width: 600px) {
+      nav {
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      #search-bar {
+        flex-direction: column;
+      }
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    #trending {
+      padding: 2rem;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .trending-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    .trending-list .movie-card {
+      background: var(--card);
+      border-radius: 8px;
+      overflow: hidden;
+      text-align: center;
+      width: 150px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .trending-list img {
+      width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <nav>
+      <div class="nav-left"><strong>Movie Plex</strong></div>
+
+      <button class="hamburger" onclick="toggleMobileMenu()">☰</button>
+
+      <div class="nav-right" id="nav-links">
+        <a href="#home">Home</a>
+        <a href="#trending">Trending</a>
+        <a href="#contact">Contact</a>
+        <div class="theme-switch-wrapper">
+          <label class="theme-switch">
+            <input type="checkbox" id="theme-toggle" onchange="toggleTheme(this)">
+            <span class="slider round"></span>
+          </label>
+          <span id="mode-label">Dark Mode</span>
+        </div>
+
+      </div>
+    </nav>
+  </header>
+
+
+  <div class="container">
+
+    <section id="home">
+      <h2>Your Movie Plex</h2>
+      <br>
+      <div id="search-bar">
+        <input type="text" id="movie-title" placeholder="Search for movies..." />
+        <button onclick="searchMovies()">Search</button>
+      </div>
+      <div id="loader" style="display:none;">🔄 Loading...</div>
+      <div id="movie-result"></div>
+      <div id="movie-details"></div>
+    </section>
+
+    <section id="trending">
+      <h2>Trending Movies</h2>
+      <div class="trending-list"></div>
+    </section>
+
+
+    <section id="contact">
+
+      <form id="contact-form" onsubmit="return validateForm()">
+        <h2>Contact Us</h2>
+        <div>
+          <label for="name">Name:</label><br />
+          <input type="text" id="name" required />
+        </div>
+        <div>
+          <label for="email">Email:</label><br />
+          <input type="email" id="email" required />
+        </div>
+        <div>
+          <label for="message">Message:</label><br />
+          <textarea id="message" rows="4" required></textarea>
+        </div><br />
+        <button type="submit">Send Message</button>
+        <p id="form-status"></p>
+      </form>
+    </section>
+
+  </div>
+
+  <footer>
+    &copy; 2025 Movie Finder. All rights reserved.
+  </footer>
+
+  <script>
+    function toggleTheme(toggle) {
+      const isDark = toggle.checked;
+      document.body.classList.toggle('dark', isDark);
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+
+      const modeLabel = document.getElementById('mode-label');
+      modeLabel.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('theme');
+      const toggle = document.getElementById('theme-toggle');
+      const modeLabel = document.getElementById('mode-label');
+
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark');
+        toggle.checked = true;
+        modeLabel.textContent = 'Light Mode';
+      } else {
+        modeLabel.textContent = 'Dark Mode';
+      }
+    });
+
+    function toggleMobileMenu() {
+      const navLinks = document.getElementById('nav-links');
+      navLinks.classList.toggle('show');
+    }
+
+
+
+    function searchMovies() {
+      const title = document.getElementById('movie-title').value.trim();
+      const result = document.getElementById('movie-result');
+      const details = document.getElementById('movie-details');
+      const loader = document.getElementById('loader');
+      result.innerHTML = '';
+      details.innerHTML = '';
+
+      if (!title) {
+        result.innerHTML = "<p>Please enter a movie title.</p>";
+        return;
+      }
+
+      loader.style.display = 'block';
+
+      fetch(`https://www.omdbapi.com/?apikey=71f995c9&s=${encodeURIComponent(title)}`)
+        .then(res => res.json())
+        .then(data => {
+          loader.style.display = 'none';
+          if (data.Response === "False") {
+            result.innerHTML = `<p>No results found. Try another keyword.</p>`;
+          } else {
+            data.Search.forEach(movie => {
+              const card = document.createElement('div');
+              card.className = 'movie-card';
+              card.innerHTML = `
+                <img src="${movie.Poster !== "N/A" ? movie.Poster : 'https://via.placeholder.com/300x450?text=No+Image'}" alt="${movie.Title} poster">
+                <h4>${movie.Title}</h4>
+                <p>Year: ${movie.Year}</p>
+              `;
+              card.addEventListener('click', () => fetchMovieDetails(movie.imdbID));
+              result.appendChild(card);
+            });
+          }
+        })
+        .catch(err => {
+          loader.style.display = 'none';
+          result.innerHTML = `<p>Error fetching data. Please try again later.</p>`;
+          console.error(err);
+        });
+    }
+
+    function fetchMovieDetails(imdbID) {
+      const details = document.getElementById('movie-details');
+      details.innerHTML = "<p>Loading details...</p>";
+
+      fetch(`https://www.omdbapi.com/?apikey=71f995c9&i=${imdbID}&plot=full`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.Response === "False") {
+            details.innerHTML = "<p>Could not load movie details.</p>";
+          } else {
+            details.innerHTML = `
+              <h3>${data.Title} (${data.Year})</h3>
+              <img src="${data.Poster !== "N/A" ? data.Poster : 'https://via.placeholder.com/300x450?text=No+Image'}" alt="${data.Title}" style="max-width: 200px; float: left; margin-right: 1rem; border-radius: 10px;">
+              <p><strong>Genre:</strong> ${data.Genre}</p>
+              <p><strong>Director:</strong> ${data.Director}</p>
+              <p><strong>Actors:</strong> ${data.Actors}</p>
+              <p><strong>Plot:</strong> ${data.Plot}</p>
+              <div style="clear: both;"></div>
+            `;
+            window.scrollTo({ top: details.offsetTop - 80, behavior: 'smooth' });
+          }
+        })
+        .catch(err => {
+          details.innerHTML = "<p>Error loading details.</p>";
+          console.error(err);
+        });
+    }
+
+    const trendingTitles = [
+      "Dune: Part Two",
+      "Godzilla x Kong: The New Empire",
+      "The Fall Guy",
+      "Civil War",
+      "Kung Fu Panda 4",
+      "Ghostbusters: Frozen Empire",
+      "The Beekeeper",
+      "Oppenheimer"
+    ];
+
+    const trendingContainer = document.querySelector(".trending-list");
+
+    trendingTitles.forEach(async (title) => {
+      const res = await fetch(`https://www.omdbapi.com/?apikey=71f995c9&t=${encodeURIComponent(title)}`);
+      const data = await res.json();
+      if (data.Response === "True") {
+        const movieCard = document.createElement("div");
+        movieCard.classList.add("movie-card");
+        movieCard.innerHTML = `
+      <img src="${data.Poster !== "N/A" ? data.Poster : "placeholder.jpg"}" alt="${data.Title}" />
+      <h3>${data.Title}</h3>
+      <p>${data.Year}</p>
+    `;
+        trendingContainer.appendChild(movieCard);
+      }
+    });
+
+
+
+    function validateForm() {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const message = document.getElementById('message').value.trim();
+      const status = document.getElementById('form-status');
+
+      if (!name || !email || !message) {
+        status.style.color = 'red';
+        status.textContent = 'All fields are required.';
+        return false;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        status.style.color = 'red';
+        status.textContent = 'Please enter a valid email address.';
+        return false;
+      }
+
+      status.style.color = 'green';
+      status.textContent = 'Message sent successfully!';
+      return false;
+    }
+  </script>
+
+</body>
+
+</html>
