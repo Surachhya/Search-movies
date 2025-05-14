@@ -61,6 +61,7 @@
     }
 
     .nav-left {
+      margin-left: 100px;
       font-size: 1.2rem;
     }
 
@@ -296,8 +297,11 @@
       }
 
       nav {
-        flex-direction: column;
         align-items: flex-start;
+      }
+
+      .nav-left {
+        margin: auto;
       }
 
       .nav-right {
@@ -321,9 +325,13 @@
 
     @media (max-width: 600px) {
       nav {
-        flex-direction: column;
         gap: 0.5rem;
       }
+
+      .nav-left {
+        margin: auto;
+      }
+
 
       #search-bar {
         flex-direction: column;
@@ -340,6 +348,15 @@
         opacity: 1;
         transform: translateY(0);
       }
+    }
+
+    label {
+      margin: auto 10px;
+      width: 100px;
+    }
+
+    .form-group {
+      display: flex;
     }
 
     #trending {
@@ -403,7 +420,6 @@
       <br>
       <div id="search-bar">
         <input type="text" id="movie-title" placeholder="Search for movies..." />
-        <button onclick="searchMovies()">Search</button>
       </div>
       <div id="loader" style="display:none;">🔄 Loading...</div>
       <div id="movie-result"></div>
@@ -420,15 +436,16 @@
 
       <form id="contact-form" onsubmit="return validateForm()">
         <h2>Contact Us</h2>
-        <div>
+        <br>
+        <div class="form-group">
           <label for="name">Name:</label><br />
           <input type="text" id="name" required />
         </div>
-        <div>
+        <div class="form-group">
           <label for="email">Email:</label><br />
           <input type="email" id="email" required />
         </div>
-        <div>
+        <div class="form-group">
           <label for="message">Message:</label><br />
           <textarea id="message" rows="4" required></textarea>
         </div><br />
@@ -472,6 +489,35 @@
       navLinks.classList.toggle('show');
     }
 
+    function debounce(func, delay) {
+      let timeoutId;
+      return function (...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          func.apply(this, args);
+        }, delay);
+      };
+    }
+
+
+    const searchInput = document.getElementById("movie-title");
+    const moviesContainer = document.getElementById("movie-result");
+
+    const debouncedSearch = debounce(() => {
+      const query = searchInput.value.trim();
+
+      if (query.length > 2) {
+        document.getElementById("movie-title").value = query; // sync value
+        searchMovies(); // call the existing function
+      } else {
+        moviesContainer.innerHTML = "";
+      }
+    }, 300);
+
+
+    searchInput.addEventListener("input", debouncedSearch);
+
+
 
 
     function searchMovies() {
@@ -500,7 +546,7 @@
               const card = document.createElement('div');
               card.className = 'movie-card';
               card.innerHTML = `
-                <img src="${movie.Poster !== "N/A" ? movie.Poster : 'https://via.placeholder.com/300x450?text=No+Image'}" alt="${movie.Title} poster">
+                <img src="${movie.Poster !== "N/A" ? movie.Poster : 'https://cdn.pixabay.com/photo/2015/06/30/08/07/lens-826308_1280.jpg'}" alt="${movie.Title} poster">
                 <h4>${movie.Title}</h4>
                 <p>Year: ${movie.Year}</p>
               `;
@@ -528,7 +574,7 @@
           } else {
             details.innerHTML = `
               <h3>${data.Title} (${data.Year})</h3>
-              <img src="${data.Poster !== "N/A" ? data.Poster : 'https://via.placeholder.com/300x450?text=No+Image'}" alt="${data.Title}" style="max-width: 200px; float: left; margin-right: 1rem; border-radius: 10px;">
+              <img src="${data.Poster !== "N/A" ? data.Poster : 'https://cdn.pixabay.com/photo/2015/06/30/08/07/lens-826308_1280.jpg'}" alt="${data.Title}" style="max-width: 200px; float: left; margin-right: 1rem; border-radius: 10px;">
               <p><strong>Genre:</strong> ${data.Genre}</p>
               <p><strong>Director:</strong> ${data.Director}</p>
               <p><strong>Actors:</strong> ${data.Actors}</p>
@@ -544,33 +590,45 @@
         });
     }
 
-    const trendingTitles = [
-      "Dune: Part Two",
-      "Godzilla x Kong: The New Empire",
-      "The Fall Guy",
-      "Civil War",
-      "Kung Fu Panda 4",
-      "Ghostbusters: Frozen Empire",
-      "The Beekeeper",
-      "Oppenheimer"
-    ];
+const trendingTitles = [
+  "Dune: Part Two",
+  "Godzilla x Kong: The New Empire",
+  "The Fall Guy",
+  "Civil War",
+  "Kung Fu Panda 4",
+  "Ghostbusters: Frozen Empire",
+  "The Beekeeper",
+  "Oppenheimer"
+];
 
-    const trendingContainer = document.querySelector(".trending-list");
+const trendingContainer = document.querySelector(".trending-list");
 
-    trendingTitles.forEach(async (title) => {
-      const res = await fetch(`https://www.omdbapi.com/?apikey=71f995c9&t=${encodeURIComponent(title)}`);
-      const data = await res.json();
-      if (data.Response === "True") {
-        const movieCard = document.createElement("div");
-        movieCard.classList.add("movie-card");
-        movieCard.innerHTML = `
-      <img src="${data.Poster !== "N/A" ? data.Poster : "placeholder.jpg"}" alt="${data.Title}" />
-      <h3>${data.Title}</h3>
-      <p>${data.Year}</p>
-    `;
-        trendingContainer.appendChild(movieCard);
-      }
-    });
+trendingTitles.forEach(async (title) => {
+  try {
+    const res = await fetch(`https://www.omdbapi.com/?apikey=71f995c9&t=${encodeURIComponent(title)}`);
+    const data = await res.json();
+
+    if (data.Response === "True") {
+      const movieCard = document.createElement("div");
+      movieCard.classList.add("movie-card");
+
+      movieCard.innerHTML = `
+        <img src="${data.Poster !== "N/A" ? data.Poster : "https://cdn.pixabay.com/photo/2015/06/30/08/07/lens-826308_1280.jpg"}" alt="${data.Title}" />
+        <h3>${data.Title}</h3>
+        <p>${data.Year}</p>
+      `;
+
+      // 👉 Add click event to fetch and display details
+      movieCard.addEventListener("click", () => {
+        fetchMovieDetails(data.imdbID);
+      });
+
+      trendingContainer.appendChild(movieCard);
+    }
+  } catch (error) {
+    console.error(`Error fetching movie: ${title}`, error);
+  }
+});
 
 
 
